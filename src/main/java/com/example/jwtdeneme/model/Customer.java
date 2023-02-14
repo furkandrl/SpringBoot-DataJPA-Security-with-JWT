@@ -36,6 +36,9 @@ public class Customer {
     @Transient
     private int age;
 
+    public <E> Customer(UUID id, String username, String s, String password, List<E> of, Role user, LocalDate of1) {
+    }
+
     public int getAge() {
         LocalDate currentDate = LocalDate.now();
         return Period.between(birthday,  currentDate).getYears();

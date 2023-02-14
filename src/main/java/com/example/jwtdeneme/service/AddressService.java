@@ -103,7 +103,7 @@ public class AddressService {
                 .collect(Collectors.toList()).contains(true);
     }
 
-    private static AddressListResponse convertListResponse(Address model){
+    public  AddressListResponse convertListResponse(Address model){
         return AddressListResponse.builder()
                 .name(model.getAddressName())
                 .city(model.getCity())

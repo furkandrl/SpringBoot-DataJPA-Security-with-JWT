@@ -1,6 +1,7 @@
 package com.example.jwtdeneme.exception;
 
 import com.example.jwtdeneme.dto.ErrorObject;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import java.util.Date;
+
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -21,6 +23,12 @@ public class GlobalExceptionHandler {
         errorObject.setTimestamp(new Date());
 
         return new ResponseEntity<>(errorObject, exc.getHttpStatus());
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<RuntimeException> handleRuntimeException(RuntimeException  exception){
+
+        return new ResponseEntity<>(exception, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 }
