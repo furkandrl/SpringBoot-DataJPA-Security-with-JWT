@@ -4,14 +4,16 @@ import com.example.jwtdeneme.dto.AddressDto;
 import com.example.jwtdeneme.dto.AddressListResponse;
 import com.example.jwtdeneme.dto.CustomerDtoDetailed;
 import com.example.jwtdeneme.exception.GenericException;
+import com.example.jwtdeneme.model.Address;
 import com.example.jwtdeneme.repository.AddressRepository;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,17 +32,55 @@ class AddressServiceTest {
     }
 
     @Test
-    void saveAddress() {
+    void saveAddress_shouldReturnAddressDto() {
+        Mockito.when(customerService.findCustomerInContext()).thenReturn(Utilities.customerDto);
+        Mockito.when(addressRepository.findAllByCustomerId(customerService.findCustomerInContext().getId()))
+                .thenReturn(Optional.of(Collections.emptyList()));
 
+        Mockito.when(addressRepository.findAddressByAddressName(Utilities.saveAddressRequest.getName()))
+                .thenReturn(Optional.empty());
+
+        Address address = new Address();
+        address.setId(UUID.randomUUID());
+        address.setAddressName(Utilities.saveAddressRequest.getName());
+        address.setCity(Utilities.saveAddressRequest.getCity());
+        address.setProvince(Utilities.saveAddressRequest.getProvince());
+        address.setCustomer(customerService.findCustomerInContextReturnCustomer());
+
+        var convertResponse =CustomerDtoDetailed.builder()
+                .id(Utilities.customer.getId())
+                .username(Utilities.customer.getUsername())
+                .email(Utilities.customer.getEmail())
+                .password(Utilities.customer.getPassword())
+                .addresses(Utilities.customer.getAddresses())
+                .birthday(Utilities.customer.getBirthday())
+                .age(24)
+                .build();
+
+        Mockito.when(customerService.convertResponse(address.getCustomer()))
+                .thenReturn(convertResponse);
+
+        AddressDto expected = AddressDto.builder()
+                .id(address.getId())
+                .addressName(address.getAddressName())
+                .city(address.getCity())
+                .province(address.getProvince())
+                .customer(customerService.convertResponse(address.getCustomer()))
+                .build();
+
+        Mockito.when(addressRepository.save(address))
+                .thenReturn(address);
+
+        Mockito.when(addressService.convertDto(address))
+                .thenReturn(expected);
+
+        var actual = addressService.saveAddress(Utilities.saveAddressRequest);
+
+        assertEquals(expected, actual);
     }
 
     @Test
-    void updateAddress() {
-
-    }
-
-    @Test
-    void deleteAddress_shouldReturnAddressDto_WhenAddressExisted() {
+    void updateAddress_ShouldReturn_AddressListResponse_WhenAddressUpdated() {
         var list = Optional.of(List.of(Utilities.address));
         Mockito.when(customerService.findCustomerInContext()).thenReturn(Utilities.customerDto);
         Mockito.when(addressRepository.findAllByCustomerId(customerService.findCustomerInContext().getId()))
@@ -48,6 +88,42 @@ class AddressServiceTest {
 
         Mockito.when(addressRepository.findAddressByAddressName(Utilities.address.getAddressName()))
                 .thenReturn(Optional.of(Utilities.address));
+
+        Mockito.when(customerService.findCustomerInContextReturnCustomer()).thenReturn(Utilities.customer);
+
+        Address updatedAddress = new Address();
+        updatedAddress.setAddressName(Utilities.saveAddressRequest.getName());
+        updatedAddress.setCity(Utilities.saveAddressRequest.getCity());
+        updatedAddress.setProvince(Utilities.saveAddressRequest.getProvince());
+        updatedAddress.setCustomer(customerService.findCustomerInContextReturnCustomer());
+
+        Mockito.when(addressRepository.save(updatedAddress))
+                        .thenReturn(updatedAddress);
+
+        var expected = AddressListResponse.builder()
+                .name(updatedAddress.getAddressName())
+                .city(updatedAddress.getCity())
+                .province(updatedAddress.getProvince())
+                .build();
+
+        Mockito.when(addressService.convertListResponse(updatedAddress))
+               .thenReturn(expected);
+
+        var actual = addressService.updateAddress(Utilities.address.getAddressName(), Utilities.saveAddressRequest);
+
+        assertEquals(expected, actual);
+
+    }
+
+    @Test
+    void deleteAddress_shouldReturnAddressDto_WhenAddressExists() {
+        var list = Optional.of(List.of(Utilities.address));
+        Mockito.when(customerService.findCustomerInContext()).thenReturn(Utilities.customerDto);
+        Mockito.when(addressRepository.findAllByCustomerId(customerService.findCustomerInContext().getId()))
+                .thenReturn(list);
+
+        Mockito.when(addressRepository.findAddressByAddressName(Utilities.address.getAddressName()))
+              .thenReturn(Optional.of(Utilities.address));
 
         var convertResponse =CustomerDtoDetailed.builder()
                 .id(Utilities.customer.getId())
@@ -72,12 +148,36 @@ class AddressServiceTest {
         Mockito.when(addressRepository.findAddressByAddressName(Utilities.address.getAddressName()))
                 .thenReturn(Optional.of(Utilities.address));
 
-        Mockito.when(addressService.convertDto(addressRepository.findAddressByAddressName(Utilities.address.getAddressName()).get()))
-                .thenReturn(expected);
-
         var actual = addressService.deleteAddress(Utilities.address.getAddressName());
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    void deleteAddress_shouldThrowError_WhenCustomerDoesNotHaveThatAddress() {
+        var list = Optional.of(List.of(Utilities.address));
+        Mockito.when(customerService.findCustomerInContext()).thenReturn(Utilities.customerDto);
+        Mockito.when(addressRepository.findAllByCustomerId(customerService.findCustomerInContext().getId()))
+                .thenReturn(list);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> addressService.deleteAddress("non-existing addressName"))
+                .isInstanceOf(GenericException.class)
+                .hasMessageContaining("You do not have an address with that name.");
+    }
+
+    @Test
+    void deleteAddress_shouldThrowError_WhenAddressDoesNotExist() {
+        var list = Optional.of(List.of(Utilities.address));
+        Mockito.when(customerService.findCustomerInContext()).thenReturn(Utilities.customerDto);
+        Mockito.when(addressRepository.findAllByCustomerId(customerService.findCustomerInContext().getId()))
+                .thenReturn(list);
+
+        Mockito.when(addressRepository.findAddressByAddressName(Utilities.address.getAddressName()))
+                .thenReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> addressService.deleteAddress(Utilities.address.getAddressName()))
+                .isInstanceOf(GenericException.class)
+                .hasMessageContaining("Address not found.");
     }
 
     @Test
@@ -184,7 +284,6 @@ class AddressServiceTest {
 
     @Test
     void convertDto_shouldConvertAddressToAddressDto() {
-
         var convertResponse =CustomerDtoDetailed.builder()
                         .id(Utilities.customer.getId())
                         .username(Utilities.customer.getUsername())

@@ -2,6 +2,7 @@ package com.example.jwtdeneme.service;
 
 import com.example.jwtdeneme.dto.AddressDto;
 import com.example.jwtdeneme.dto.CustomerDto;
+import com.example.jwtdeneme.dto.SaveAddressRequest;
 import com.example.jwtdeneme.model.Address;
 import com.example.jwtdeneme.model.Customer;
 import com.example.jwtdeneme.model.Role;
@@ -20,5 +21,11 @@ public class Utilities {
             .id(customer.getId())
             .username(customer.getUsername())
             .role(customer.getRole())
+            .build();
+
+    static SaveAddressRequest saveAddressRequest = SaveAddressRequest.builder()
+            .name("updated-addressName")
+            .city("updated-city")
+            .province("updated-province")
             .build();
 }
