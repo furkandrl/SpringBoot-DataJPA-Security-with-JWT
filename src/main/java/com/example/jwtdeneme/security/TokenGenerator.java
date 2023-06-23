@@ -18,7 +18,7 @@ import java.util.Date;
 public class TokenGenerator {
     @Value("dereli")
     private String KEY;
-    @Value("enoca")
+    @Value("furkan")
     private String ISSUER;
     @Value("15")
     private long EXPIRES_ACCESS_TOKEN_MINUTE;
